@@ -28,7 +28,7 @@ module helshell
 	integer, parameter,dimension(NUM_TRIAD_GEOMS) :: qlist = q_LIST
 
         ! k-vectors and modal interaction coeficients (labelled "d")
-	real,parameter,dimension(nsh)                   :: k  = [(LAMBDA**(ii-npad), ii=1, nsh)] ! Wave vectors, padding adjusted so that first non padding element has k = lambda^1
+	real,parameter,dimension(nsh)                   :: k  = [(KZERO*LAMBDA**(ii-npad), ii=1, nsh)] ! Wave vectors, padding adjusted so that first non padding element has k = lambda^1
 	real,parameter,dimension(nsh,NUM_TRIAD_GEOMS,4) :: d1 = d1_CONSTRUCTOR ! Interaction term 1 of 3
 	real,parameter,dimension(nsh,NUM_TRIAD_GEOMS,4) :: d2 = d2_CONSTRUCTOR ! Interaction term 2 of 3
 	real,parameter,dimension(nsh,NUM_TRIAD_GEOMS,4) :: d3 = d3_CONSTRUCTOR ! Interaction term 3 of 3
@@ -46,6 +46,8 @@ module helshell
 	integer, parameter        :: ismultithreaded = MULTITHREADED ! OpenMP flag
 
         ! ---------- AGGREGATES ----------
+!        integer, parameter                     :: num_anomscaling = 5                   ! 
+!        real, dimension(nsh,num_anomscaling)   :: E_anomscaling = 0                     ! 
         real, dimension(nsh)                   :: up_abs = 0, un_abs = 0                ! Aggregated Up_n*conj(Up_n), Un_n*conj(Un_n) fields.
         real, dimension(nsh,NUM_TRIAD_GEOMS,5) :: corr_p = 0, corr_n = 0                ! Aggregated correlators: Delta_n^{+,s',s''} and Delta_n^{-,s',s''}
         real, dimension(nsh,NUM_TRIAD_GEOMS,5) :: Ecorr = 0                             ! Instanteneous energy tripple-correlator:  Delta_{n,p,q}^{+,s',s''} + MODEL_PARITY* Delta_{n,p,q}^{-,s',s''}
@@ -84,6 +86,7 @@ end module
 
 program helicalshellmodel
 
+	use ieee_arithmetic
 	use helshell
 	implicit none
 	integer                                 :: ii,jj, nn,mm,pp,qq, geom,submodel,sfunc, start ! Loop indices
@@ -220,6 +223,11 @@ program helicalshellmodel
 		        do nn = nshbot,nshtop
         		        up_abs(nn) = up_abs(nn) + up(nn,1)*CONJG(up(nn,1))
         		        un_abs(nn) = un_abs(nn) + un(nn,1)*CONJG(un(nn,1))
+#if !(DISABLE_E_ANOMSCALING)
+!                                do mm = 2,num_anomscaling
+!                                !E_anomscaling(nn,mm) =  
+!                                end do
+#endif
                         end do
 
                         ! Correlators Delta_n^{+,s',s''}, Delta_n^{-,s',s''} and energy-like correlators Delta_{n,p,q}^{+,s',s''} + MODEL_PARITY* Delta_{n,p,q}^{-,s',s''}
@@ -315,7 +323,13 @@ program helicalshellmodel
 		saved(:,ii,2) = un(:,1)
 		if (MOD(ii-1,nt10) == 0) then
 		        write(*,"(I3,A)"), INT(FLOAT(ii-1)/nt * 100.), '%'
+		if (ieee_is_nan( REAL(up(nshbot,1)) )) then
+				write(*,"(A45)"), '*** NaNs encountered, halting integration.'
+				saved(:,nt+1,1) = saved(:,ii-1,1)
+				saved(:,nt+1,2) = saved(:,ii-1,2)
+				exit
 	        end if
+		end if
 		!$OMP END SINGLE
 		
 	end do 
@@ -338,7 +352,7 @@ program helicalshellmodel
 	        write(*,"(A19,F4.2)"),                   'LAMBDA: ',            LAMBDA
 	        write(*,"(A19,I2)"),                     'INTERACTION SCOPE: ', q_MAX
 	        print *, '-------------- FORCING/DISSIPATION ----------'
-	        write(*,"(A19,A5,I2,A12,I2)"),           'FORCING: ',           'Type ',FTYPE,' at shell n=',nshfrc
+	        write(*,"(A19,A5,I2,A12,I3)"),           'FORCING: ',           'Type ',FTYPE,' at shell n=',nshfrc
                 write(*,"(A19,A5,I1)"),                  'DISSIPATION: ',       'Type ',DTYPE
 	        write(*,"(A19,E7.1)"),                   'NU (SMALL SCALE): ',  VISC_SMALLSCALE
 	        write(*,"(A19,E7.1)"),                   'NU (LARGE SCALE): ',  VISC_LARGESCALE

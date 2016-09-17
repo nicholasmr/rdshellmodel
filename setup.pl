@@ -26,6 +26,8 @@ my $NSH          = $ARGV[8];
 my $F_IN         = $ARGV[9];
 my $F_OUT        = $ARGV[10];
 
+print "DEBUG: lambda_m = $LAMBDA_m, lambda_g = $LAMBDA_g, lambda_G = $LAMBDA_G\n";
+
 #--------------------------------------------------------------------------
 
 # Model 1-4 Sp and Sq values (s^prime and s^double-prime)
@@ -52,6 +54,7 @@ my $IS_PQ_FIXED = !(($FIXED_P == 0) && ($FIXED_Q == 0));
 # Weights
 sub G { my ($L,$p,$q) = @_;         return (1/8)*( 2*$L**(-2*$q) + 2*$L**(-2*$p) + 2 - $L**(-2*($p+$q)) - $L**(2*($p-$q)) - $L**(2*($q-$p)) )**0.5; }
 sub g { my ($L,$p,$q,$Sp,$Sq) = @_; return -1*$Sp*$Sq*(1 + $Sp*$L**$p - $Sq*$L**$q)*($Sp*$L**$p - $Sq*$L**$q); }
+#sub g { my ($L,$p,$q,$Sp,$Sq) = @_; return abs(-1*$Sp*$Sq*(1 + $Sp*$L**$p - $Sq*$L**$q)*($Sp*$L**$p - $Sq*$L**$q)); }
 
 sub eps_RD    { my ($L,$p,$q,$Sp,$Sq) = @_; return ($Sp - $Sp*$Sq*$L**($q))/($Sp*$L**($p) - $Sq*$L**($q)); }
 sub xi_RD     { my ($L,$p,$q,$Sp,$Sq) = @_; return $Sp*$Sq*eps_RD($L,$p,$q,$Sp,$Sq) - $Sq; }
@@ -210,7 +213,7 @@ foreach my $triad (1..$num_of_triads) {
 }
 foreach my $submodel (1..4) {
 foreach my $triad (1..$num_of_triads) {
-        push(@g_joinme,   $g[$triad][$submodel]);
+        push(@g_joinme,   sprintf('%.8f',$g[$triad][$submodel]));
         push(@eps_joinme, $eps[$triad][$submodel]);
         push(@xi_joinme,  $xi[$triad][$submodel]);
         push(@d1_joinme,  $d1[$triad][$submodel]);
@@ -221,7 +224,7 @@ foreach my $triad (1..$num_of_triads) {
 my %REPLACE;
 $REPLACE{'REPLACE__MODEL'}  = $MODEL;
 $REPLACE{'REPLACE__NSH'}    = $NSH;
-$REPLACE{'REPLACE__LAMBDA'} = $LAMBDA_m;
+$REPLACE{'REPLACE__LAMBDA'} = sprintf('%.8f',$LAMBDA_m); # Must not be integer, convert to float
 $REPLACE{'REPLACE__q_MAX'}  = $q_max;
 $REPLACE{'REPLACE__NUM_TRIAD_GEOMS'} = $num_of_triads;
 $REPLACE{'REPLACE__SUBMODEL_CLASS'} = ($IS_MULTI_SUBMODEL) ? 5 : $MODELLIST[0];

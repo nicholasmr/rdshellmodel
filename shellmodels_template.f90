@@ -8,8 +8,10 @@
 !-----------------------------------
 #define DISABLE_N_SHELL         0
 #define DISABLE_VEL_SAMPLING    1
-#define DISABLE_FLUX_CALC       1
-#define DISABLE_STRUCTURE_FUNCS 1
+
+#define DISABLE_FLUX_CALC       0
+#define DISABLE_STRUCTURE_FUNCS 0
+#define DISABLE_E_ANOMSCALING   1
 
 !-----------------------------------
 ! FORCING TYPE
@@ -52,7 +54,7 @@
 ! Uses the "direct integration of dissipation trick" (nuk2x) 
 
 #define NUK2X__SMALLSCALE   -dt2*VISC_SMALLSCALE*k(ii)**2
-#define NUK2X__LARGESCALE   -dt2*VISC_LARGESCALE*k(ii)**(-4)
+#define NUK2X__LARGESCALE   -dt2*VISC_LARGESCALE*k(ii)**(LSKDEP)
 
 #if DTYPE == 0
 #define NUK2X                   [(1, ii=1, nsh)]
