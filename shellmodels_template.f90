@@ -1,21 +1,23 @@
 ! Nicholas M. Rathmann <rathmann@nbi.ku.dk>, 2014-2016
 
 ! This file is a template. It must be parsed by the setup.pl pre-compiler to replace all "PREPLACE__*" symbols, which generates the proper shellmodels.f90 file used by main.f90. The shellmodels.f90 file then contains the specific model setup wanted. 
-! NOTE: captial "lc" is a marker for the precompiler to substitute for a newline character. See the Makefile.
+! NOTE: capital "lc" is a marker for the pre-compiler to substitute for a newline character. See the Makefile.
 
 !-----------------------------------
 ! FLAGS AND DEBUGGING
 !-----------------------------------
-#define DISABLE_N_SHELL         0
-#define DISABLE_VEL_SAMPLING    1
+#define DISABLE_N_SHELL         0       /* Disable u^-_n (negative) shells*/
+#define DISABLE_VEL_SAMPLING    1       /* If disabled, only first and last simulated velocities (u_n^{+,-}) are saved */
 
-#define DISABLE_FLUX_CALC       0
-#define DISABLE_STRUCTURE_FUNCS 0
-#define DISABLE_E_ANOMSCALING   1
+#define DISABLE_FLUX_CALC       1       /* If doing aggreations, skip Pi_^E_n (Eflux) */
+#define DISABLE_STRUCTURE_FUNCS 1       /* If doing aggreations, skip structure functions (structfuncs) */
+#define DISABLE_E_ANOMSCALING   1       /* NOT YET IMPLEMENTED */
 
 !-----------------------------------
 ! FORCING TYPE
 !-----------------------------------
+! If positive, both helical shells (+,-) are forced, if negative, only positive shell(s) are forced (+).
+! 0 => no forcing, 1/-1 => f_n = const, 2/-2 => f_n = const/conj(u_n)
 
 #if FTYPE == 0
 #define FORCING_0   0
@@ -23,7 +25,7 @@
 #define FORCING_0   FMAGNITUDE*cmplx(1, 1)
 #endif
 
-#define FORCING__CONST_U_INCREMENT        dt*FORCING_0
+#define FORCING__CONST_U_INCREMENT           dt*FORCING_0
 #define FORCING__CONST_E_INCREMENT__P(N)     dt*FORCING_0/CONJG(up(N,1))
 #define FORCING__CONST_E_INCREMENT__N(N)     dt*FORCING_0/CONJG(un(N,1))
 
@@ -51,8 +53,9 @@
 !-----------------------------------
 ! DISSIPATION TYPE
 !-----------------------------------
-! Uses the "direct integration of dissipation trick" (nuk2x) 
+! dtype=0 => no dissipation, dtype=1 => small-scale dissipation, dtype=2 => large-scale dissipation, dtype=3 => large- and small-scale dissipation
 
+! Uses the "direct integration of dissipation trick" (nuk2x) 
 #define NUK2X__SMALLSCALE   -dt2*VISC_SMALLSCALE*k(ii)**2
 #define NUK2X__LARGESCALE   -dt2*VISC_LARGESCALE*k(ii)**(LSKDEP)
 
@@ -87,7 +90,7 @@
 #define SUBMODEL_CLASS          REPLACE__SUBMODEL_CLASS
 #define q_LIST                  REPLACE__q_LIST  
 #define p_LIST                  REPLACE__p_LIST
-! Interaction coeficients (array constructors)
+! Interaction coefficients (array constructors)
 #define G_CONSTRUCTOR           REPLACE__G_CONSTRUCTOR
 #define g_CONSTRUCTOR           REPLACE__g_CONSTRUCTOR
 #define eps_CONSTRUCTOR         REPLACE__eps_CONSTRUCTOR
@@ -96,7 +99,7 @@
 #define d2_CONSTRUCTOR          REPLACE__d2_CONSTRUCTOR
 #define d3_CONSTRUCTOR          REPLACE__d3_CONSTRUCTOR
 
-! PARITY HERE REFERS TO THE SIGN SYMMETRY WITHIN THE MODEL EQUATIONS AND TRIPPLE-CORRELATORS
+! PARITY HERE REFERS TO THE SIGN SYMMETRY WITHIN THE MODEL EQUATIONS AND TRIPLE-CORRELATORS
 #if MODEL < 10 
 #define MODEL_PARITY  +1
 #else
@@ -176,7 +179,7 @@
 #endif
 
 !-----------------------------------
-! AGGREGATED TRIPPLE CORRELATIONS
+! AGGREGATED TRIPLE CORRELATIONS
 !-----------------------------------
 
 #define CORR_P_1(N,p,q)        REAL(CONJG(up(IDX_5(N,p,q)+1,1))*CONJG(un(IDX_6(N,p,q)+1,1))*up(N+1,1))

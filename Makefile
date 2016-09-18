@@ -1,34 +1,57 @@
+#If you have questions or are experiencing any problems, please contact <rathmann@nbi.ku.dk>. 
+
 #----------------------
 # GENERAL SETUP
 #----------------------
 
-OUTDIR=../../debug/
-MULTITHREADED=0
+OUTDIR=./
+MULTITHREADED=0         # Use OpenMP multithreading?
 
 # Integration status
-RESUME=0
-DO_AGGREGATIONS=0
-RESUME_AGGREGATIONS=0
+#-------------------
+RESUME=0                # Resume from previously dumped .nc file? (file must be re-named from "dump.nc" to "resume.nc").
+DO_AGGREGATIONS=0       # Aggregate over all time steps correlator values (corr_*), u^+_n and u^-_n (u*_abs), Pi_^E_n (Eflux) and structure functions (structfuncs) (see main.f90 for details, also note some of these may manually be deactivated in shellmodels_template.f90).
+RESUME_AGGREGATIONS=0   # If resuming from resume.nc, should the already saved aggregated statistics be neglected or not?   
 
 # The model
-MODEL=12
-NSH=148
-LAMBDA_m=1.1
-LAMBDA_g=$(LAMBDA_m)
-LAMBDA_G=$(LAMBDA_m)
-DEMARC_MODEL=0
-DEMARC_VALUE=0
-FIXED_P=1
-FIXED_Q=2
+#----------
+MODEL=15                # Models 11-14 refer to the individual submodels 1-4, whereas model 15 refers to the coupled submodels 1-4 (Rathmann and Ditlevsen, 2016).  
+NSH=148                 # Number of shells
+LAMBDA_m=1.1            # Lambda value used for epsilon_{p,q}^{s',s''} and xi_{p,q}^{s',s''}.
+LAMBDA_g=$(LAMBDA_m)    # Lambda value used for g_{p,q}^{s',s''}
+LAMBDA_G=$(LAMBDA_m)    # Lambda value used for G_{p,q}^{s',s''}
+FIXED_P=1               # Comma separated list (no spaces) of p-values to include (if more than one is specified a multi triad shape system is simulated). A value of zero (0) implies simulating all values allowed by the above specified Lambda. 
+FIXED_Q=2               # ... similarly as for FIXED_P, but for q.
+DEMARC_MODEL=0          # Demarcate submodel weights (g) towards of away from this submodel (see setup.pl for details). Zero (0) implies no demarcation.
+DEMARC_VALUE=0          # Demarcation value.
 
+# Forcing
+#--------
+FTYPE=-2        # Forcing type - see shellmodels_template.f90 for details.
+FSH=48          # Forcing shell
+DFSH=1          # Number of shells to force above FSH (1=>only shell FSH)
+FMAGNITUDE=1    # Forcing magnitude
+
+# Dissipation
+#------------
+DTYPE=3                 # Dissipation type - see shellmodels_template.f90 for details.
+VISC_SMALLSCALE=1.0D-8  # Small-scale viscocities
+VISC_LARGESCALE=1.0D+3  # Large-scale viscocities
+LSKDEP=-4               # Large-scale k-dependence for the dissipation (the small-scale one is fixed at -2 as the Navier-Stokes equation prescribes, i.e. nu*k^2*u_n^{+,-})
+
+# Numerics
+#---------
+NT=100          # Number of outer-loop integration steps for which velocity profile is saved (see main.f90 for details).
+NTI=1000        # Number of inner-loop integration steps 
+DT=1.0D-7       # dt
+KZERO=1         # k_0 (smallest wave-number resolved)
+
+#---------------------------
 MODELCONFIG=$(MODEL) $(LAMBDA_m) $(LAMBDA_g) $(LAMBDA_G) $(DEMARC_MODEL) $(DEMARC_VALUE) $(FIXED_P) $(FIXED_Q) $(NSH)
-
-# Forcing, dissipation, etc.
-MACROS__MAIN__FORCE=-DFTYPE=-2 -DFSH=48 -DDFSH=1 -DFMAGNITUDE=1 
-MACROS__MAIN__DISSP=-DDTYPE=3 -DVISC_SMALLSCALE=1.0D-8 -DVISC_LARGESCALE=1.0D+3 -DLSKDEP=-4
-MACROS__MAIN__NUMERICS=-DNT=100 -DNTI=1000 -DDT=1.0D-7 -DKZERO=1
+MACROS__MAIN__FORCE=-DFTYPE=$(FTYPE) -DFSH=$(FSH) -DDFSH=$(DFSH) -DFMAGNITUDE=$(FMAGNITUDE)  
+MACROS__MAIN__DISSP=-DDTYPE=$(DTYPE) -DVISC_SMALLSCALE=$(VISC_SMALLSCALE) -DVISC_LARGESCALE=$(VISC_LARGESCALE) -DLSKDEP=$(LSKDEP)
+MACROS__MAIN__NUMERICS=-DNT=$(NT) -DNTI=$(NTI) -DDT=$(DT) -DKZERO=$(KZERO)
 MACROS__MAIN__OTHER=-DRESUME=$(RESUME) -DMULTITHREADED=$(MULTITHREADED) -DOUTDIR=$(OUTDIR) -DDO_AGGREGATIONS=$(DO_AGGREGATIONS) -DRESUME_AGGREGATIONS=$(RESUME_AGGREGATIONS)
-
 MACROS__MAIN=$(MACROS__MAIN__FORCE) $(MACROS__MAIN__DISSP) $(MACROS__MAIN__NUMERICS) $(MACROS__MAIN__OTHER)
 
 #----------------------
