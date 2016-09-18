@@ -16,8 +16,8 @@
 !-----------------------------------
 ! FORCING TYPE
 !-----------------------------------
-! If positive, both helical shells (+,-) are forced, if negative, only positive shell(s) are forced (+).
-! 0 => no forcing, 1/-1 => f_n = const, 2/-2 => f_n = const/conj(u_n)
+! If ftype is positive, both helical shells (+,-) are forced, if negative, only positive shell(s) are forced (+).
+! ftype=0 => no forcing, ftype=1 or -1 => f_n = const, ftype=2 or -2 => f_n = const/conj(u_n)
 
 #if FTYPE == 0
 #define FORCING_0   0
